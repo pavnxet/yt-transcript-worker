@@ -1,0 +1,287 @@
+===============================================================================
+                       PAVNXET PREMIUM CREAMY DESIGN SYSTEM & THEME GUIDE
+===============================================================================
+Vibe: "Creamy Light Mode" / "Warm Sand Aesthetics" / "Microsoft Copilot Inspired"
+Description: A minimalist, low-contrast, ultra-comfortable dark/cream typography theme
+             designed to prevent screen fatigue and offer an elegant, premium look.
+===============================================================================
+
+1. CORE PALETTE & DESIGN TOKENS (CSS VARIABLES)
+-------------------------------------------------------------------------------
+Copy and paste these directly into your :root element. In this design system, 
+harsh black (#000) and stark blinding whites (#FFF) are avoided. 
+Instead, warm tones, desaturated sand tints, and charcoal ink are utilized.
+
+:root {
+  /* Color Palette (Creamy Light Mode Base) */
+  --bg-primary: #faf6f0;         /* Primary body background (Soft Cream) */
+  --bg-surface: #ffffff;         /* Pure white for cards, elevated sidebars & panels */
+  --bg-inner: #f6efe5;           /* Creamier secondary background / placeholder blocks */
+  --bg-active: #f3ebe0;          /* Slightly deeper cream for active pressed states */
+  
+  /* Additional Cream Scale Variants */
+  --cream: #faf6f0;
+  --cream2: #f4ede2;
+  --cream3: #ecdfd0;
+
+  /* Text & Ink Colors (Charcoal/Brown Hue instead of #000) */
+  --ink: #1e1a15;                /* High contrast dark ink for main headings */
+  --ink2: #4a4038;               /* Soft Charcoal for primary readable paragraphs */
+  --ink3: #8c7e6e;               /* Muted grey-brown for description/meta labels */
+  --text-main: #2c2a27;          /* Dashboard structural text */
+  --text-muted: #7a7266;         /* Dashboard secondary muted descriptions */
+  --text-inverse: #ffffff;       /* White text on dark CTA elements */
+
+  /* Accent & Decorative Colors */
+  --accent: #b07d4a;             /* Warm Golden Amber for links & hover highlights */
+  --accent-soft: #f0e4d0;        /* Subtle cream-gold background tint for badges */
+  --accent-cocoa: #8e7c68;       /* Primary highlight color (Warm Cocoa) */
+  --accent-cocoa-light: #f2ece4; /* Cocoa background tint for selected menu options */
+  --accent-gold: #c5a880;        /* Muted Gold border/badge trims */
+  --warm: #c9a87c;               /* Decorative dividers and micro lines */
+  --warm2: #e8d5b7;              /* Soft navigation boundaries */
+
+  /* Status Colors */
+  --status-completed-bg: #eaf2ec;
+  --status-completed-text: #4e7e5c;
+  --status-ongoing-bg: #faf0e6;
+  --status-ongoing-text: #c07f4e;
+
+  /* Border Radii */
+  --radius: 16px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  /* Typography Scale Rules */
+  --font-primary: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Sora', 'Segoe UI Variable', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-code: 'Consolas', 'Courier New', Courier, monospace;
+
+  /* Transition Curves */
+  --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-elastic: all 0.25s cubic-bezier(.22,.68,0,1.1);
+
+  /* Shadows (Tinted with Warm Hue instead of Harsh Transparent Black) */
+  --shadow-sm: 0 2px 8px rgba(142, 124, 104, 0.04);
+  --shadow: 0 4px 20px rgba(160, 120, 70, 0.08);
+  --shadow-md: 0 10px 24px rgba(142, 124, 104, 0.06);
+  --shadow-lg: 0 20px 40px rgba(142, 124, 104, 0.1);
+  --shadow-hover: 0 24px 48px rgba(142, 124, 104, 0.15);
+}
+
+
+2. TYPOGRAPHY SETUP & PAIRING
+-------------------------------------------------------------------------------
+The system leverages Google Fonts to achieve a premium editorial feel:
+1. Google Font 'Outfit' / 'Sora' (Sans-Serif): Used for interface elements, dashboard controls, statistics, categories, buttons, and responsive grid metadata.
+2. Google Font 'Lora' (Serif): Used for elegant article headers, body text of stories, blockquotes, and logo markers.
+
+HTML Embedding Code:
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
+
+Font Family CSS Application:
+- Headings & Story Title: font-family: var(--font-serif); font-weight: 500;
+- Regular UI/Buttons/Badges: font-family: var(--font-sans) OR var(--font-primary);
+- Monospace/Code blocks: font-family: var(--font-code);
+
+
+3. BASE LAYOUT & STYLING RULES
+-------------------------------------------------------------------------------
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--ink);
+  font-family: var(--font-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+4. CARD SYSTEM ARCHITECTURE
+-------------------------------------------------------------------------------
+The architecture relies on smooth corner curves, hidden overflows, elegant image scales, 
+and micro-interactions on hover.
+
+A. General Layout Card (Blog/Portfolio Element):
+.card {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  transition: var(--transition-elastic);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-5px);
+}
+.card-img-wrap {
+  overflow: hidden;
+  height: 200px;
+  background: var(--cream2);
+}
+.card-img-wrap img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.55s cubic-bezier(.22,.68,0,1.1);
+}
+.card:hover .card-img-wrap img {
+  transform: scale(1.06);
+}
+
+B. Soft Tinted Shadows (Crucial Aesthetic Detail):
+Notice that black shadows `rgba(0,0,0,0.1)` are strictly forbidden in this theme 
+because they wash out the creamy undertone. Shadows always incorporate a desaturated brown 
+or cocoa element:
+box-shadow: 0 4px 20px rgba(160, 120, 70, 0.08);
+
+
+5. CORE INTERFACE UI COMPONENTS
+-------------------------------------------------------------------------------
+A. Search Bar Container:
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+}
+.search-input {
+  background: var(--white);
+  border: 1.5px solid var(--cream3);
+  border-radius: 24px;
+  padding: 10px 16px 10px 40px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  width: 100%;
+  outline: none;
+  transition: var(--transition-elastic);
+}
+.search-input:focus {
+  border-color: var(--warm);
+  box-shadow: 0 4px 20px rgba(160,120,70,0.08);
+}
+
+B. Badges & Tag Pills:
+.tag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+/* Category Specific Soft Palettes */
+.tag.travel  { background: #e8f0e8; color: #4a7c59; }
+.tag.food    { background: #fdf0e4; color: #c06020; }
+.tag.tech    { background: #eae8f5; color: #5040a0; }
+
+C. Glassmorphic Navigation Bar:
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(250,246,240,0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--warm2);
+}
+
+
+6. ARTICLE READER & EDITORIAL DETAILS
+-------------------------------------------------------------------------------
+When rendering content columns, text size scales perfectly, and blockquotes provide 
+the main brand focus using a left accent border:
+
+article {
+  font-family: var(--font-serif);
+  font-size: 17.5px;
+  color: var(--ink2);
+}
+blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 0 8px 24px;
+  margin: 32px 0;
+  font-style: italic;
+  font-size: 19px;
+  color: var(--accent);
+  line-height: 1.6;
+}
+pre, code {
+  font-family: var(--font-code);
+  font-size: 14.5px;
+  background: var(--cream2);
+  border-radius: var(--radius-sm);
+}
+code {
+  padding: 2.5px 6px;
+  border: 1px solid var(--warm2);
+  color: var(--accent);
+}
+
+
+7. RESPONSIVENESS AND DEVICE LAYOUT CONSTRAINTS
+-------------------------------------------------------------------------------
+The grid layouts smoothly morph when screen thresholds drop, scaling text or shifting 
+sidebars seamlessly into touch-optimized parameters.
+
+A. Layout Grid Settings:
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 24px;
+}
+
+B. Responsive Breakpoints:
+@media (max-width: 900px) {
+  /* Tables of contents collapse into horizontal scrolling bars */
+  .toc-list {
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Desktop sidebars hide or convert to mobile native slide-out drawers */
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  /* Cards fall back into full column stack blocks */
+  .card-featured {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Elements shift inward to ensure minimal bounding edge conflicts */
+  .article-title {
+    font-size: 24px;
+  }
+  .nl-form {
+    flex-direction: column;
+  }
+}
+===============================================================================
+                       END OF THEME REFERENCE GUIDE
+===============================================================================
