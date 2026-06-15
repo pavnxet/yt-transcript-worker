@@ -114,25 +114,11 @@ A secure, self-hosted YouTube transcript downloader with multi-key API managemen
 ## Project Structure
 
 ```
-yt-transcript-worker/
+mimocode/
 ├── worker.js           # Main Cloudflare Worker (all-in-one)
 ├── wrangler.toml       # Cloudflare Workers config
-├── bugs_found.md       # Bug audit report
-├── bugs_fixed.md       # Bug fix documentation
 └── README.md           # This file
 ```
-
-## Bug Fixes
-
-This project underwent a comprehensive security and reliability audit. See [bugs_found.md](bugs_found.md) for the full report and [bugs_fixed.md](bugs_fixed.md) for detailed fix documentation.
-
-**Key fixes applied:**
-- ID-based key matching (prevents index corruption on deletion)
-- Constant-time password comparison
-- Credit decrement only after valid transcript received
-- Server-side YouTube URL validation
-- NaN guards and parseInt radix fixes
-- Generic error responses
 
 ## License
 
