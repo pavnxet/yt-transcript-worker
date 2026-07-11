@@ -6,8 +6,5 @@
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
-  },
-  "dependencies": {
-    "youtube-captions-scraper": "^2.0.3"
   }
 }
