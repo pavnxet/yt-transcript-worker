@@ -1,8 +1,3 @@
-const WATCH_URL = "https://www.youtube.com/watch?v=";
-const INNERTUBE_URL = "https://www.youtube.com/youtubei/v1/player";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
-
 function extractVideoId(url) {
   const patterns = [
     /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
@@ -15,78 +10,65 @@ function extractVideoId(url) {
   return null;
 }
 
-async function getSession(videoId) {
-  const res = await fetch(`${WATCH_URL}${videoId}&hl=en`, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  const html = await res.text();
+const PROXY_APIS = [
+  `https://yt.lemnoslife.com/noKey/captions?part=snippet&videoId=`,
+  `https://yt.lemnoslife.com/noKey/captions?videoId=`,
+];
 
-  const apiKey = html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/)?.[1];
-  if (!apiKey) throw new Error("Cannot extract API key");
-
-  const clientVersion =
-    html.match(/"INNERTUBE_CLIENT_VERSION":\s*"([^"]+)"/)?.[1] || "2.20260320.08.00";
-  const visitorData =
-    html.match(/"VISITOR_DATA":"([^"]+)"/)?.[1] || "";
-
-  return { apiKey, clientVersion, visitorData };
+async function fetchWithTimeout(url, opts = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 async function getCaptions(videoId) {
-  const session = await getSession(videoId);
+  for (const api of PROXY_APIS) {
+    try {
+      const res = await fetchWithTimeout(`${api}${videoId}`);
+      if (!res.ok) continue;
 
-  const res = await fetch(`${INNERTUBE_URL}?key=${session.apiKey}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": USER_AGENT,
-      "X-YouTube-Client-Name": "1",
-      "X-YouTube-Client-Version": session.clientVersion,
-      ...(session.visitorData ? { "X-Goog-Visitor-Id": session.visitorData } : {}),
-    },
-    body: JSON.stringify({
-      context: {
-        client: {
-          hl: "en",
-          gl: "US",
-          clientName: "WEB",
-          clientVersion: session.clientVersion,
-          visitorData: session.visitorData,
-        },
-      },
-      videoId,
-    }),
-  });
+      const data = await res.json();
+      const items = data?.items || data?.captions || [];
 
-  if (!res.ok) throw new Error(`InnerTube API returned ${res.status}`);
-  const data = await res.json();
+      if (!items.length) continue;
 
-  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-  if (!tracks?.length) throw new Error("No captions available");
+      const snippet = items[0]?.snippet || items[0];
+      const trackUrl = snippet?.trackContentUrl || snippet?.url;
 
-  const track = tracks.find((t) => t.languageCode === "en") || tracks[0];
-  const subRes = await fetch(track.baseUrl, {
-    headers: { "User-Agent": USER_AGENT },
-  });
+      if (!trackUrl) continue;
 
-  const xml = await subRes.text();
-  const snippets = [];
-  const regex = /<text start="([^"]*)" dur="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
-  let match;
+      const subRes = await fetchWithTimeout(trackUrl);
+      if (!subRes.ok) continue;
 
-  while ((match = regex.exec(xml)) !== null) {
-    const text = match[3]
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\n/g, " ")
-      .trim();
-    if (text) snippets.push(text);
+      const xml = await subRes.text();
+      const snippets = [];
+      const regex = /<text start="([^"]*)" dur="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
+      let match;
+
+      while ((match = regex.exec(xml)) !== null) {
+        const text = match[3]
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\n/g, " ")
+          .trim();
+        if (text) snippets.push(text);
+      }
+
+      if (snippets.length) return snippets.join(" ");
+    } catch {
+      continue;
+    }
   }
 
-  return snippets.join(" ");
+  throw new Error("All caption APIs failed");
 }
 
 export default async function handler(req, res) {
