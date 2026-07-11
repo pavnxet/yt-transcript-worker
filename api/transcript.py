@@ -3,6 +3,8 @@ import re
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
+from youtube_transcript_api import YouTubeTranscriptApi
+
 
 def extract_video_id(url):
     patterns = [
@@ -40,11 +42,23 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"error": "Invalid YouTube URL"}).encode())
             return
 
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(f"Video ID: {video_id}".encode())
+        try:
+            ytt_api = YouTubeTranscriptApi()
+            transcript = ytt_api.fetch(video_id, languages=["en"])
+            text = " ".join(snippet.text for snippet in transcript)
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Disposition", f'attachment; filename="{video_id}-transcript.txt"')
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(text.encode())
+        except Exception as e:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def do_OPTIONS(self):
         self.send_response(200)
