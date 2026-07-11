@@ -1,9 +1,8 @@
 import json
 import re
+import traceback
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-
-from youtube_transcript_api import YouTubeTranscriptApi
 
 
 def extract_video_id(url):
@@ -43,6 +42,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         try:
+            from youtube_transcript_api import YouTubeTranscriptApi
             ytt_api = YouTubeTranscriptApi()
             transcript = ytt_api.fetch(video_id, languages=["en"])
             text = " ".join(snippet.text for snippet in transcript)
@@ -54,11 +54,12 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(text.encode())
         except Exception as e:
+            tb = traceback.format_exc()
             self.send_response(500)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode())
+            self.wfile.write(json.dumps({"error": str(e), "type": type(e).__name__, "trace": tb[-500:]}).encode())
 
     def do_OPTIONS(self):
         self.send_response(200)
