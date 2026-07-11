@@ -1,0 +1,13 @@
+{
+  "name": "yt-transcript-worker",
+  "version": "1.0.0",
+  "description": "YouTube transcript extractor using Vercel serverless functions",
+  "main": "api/transcript.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "youtube-captions-scraper": "^1.0.7"
+  }
+}
