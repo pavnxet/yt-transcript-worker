@@ -1,80 +1,92 @@
+const WATCH_URL = "https://www.youtube.com/watch?v=";
+const INNERTUBE_URL = "https://www.youtube.com/youtubei/v1/player";
+const USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
+
 function extractVideoId(url) {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
-    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
     /^([a-zA-Z0-9_-]{11})$/,
   ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
   }
   return null;
 }
 
-const INVIDIOUS_INSTANCES = [
-  "https://vid.puffyan.us",
-  "https://invidious.snopyta.org",
-  "https://yewtu.be",
-  "https://inv.tux.pizza",
-  "https://invidious.privacyredirect.com",
-];
+async function getSession(videoId) {
+  const res = await fetch(`${WATCH_URL}${videoId}&hl=en`, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+  const html = await res.text();
 
-function decodeHtmlEntities(text) {
-  return text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n/g, " ")
-    .trim();
+  const apiKey = html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/)?.[1];
+  if (!apiKey) throw new Error("Cannot extract API key");
+
+  const clientVersion =
+    html.match(/"INNERTUBE_CLIENT_VERSION":\s*"([^"]+)"/)?.[1] || "2.20260320.08.00";
+  const visitorData =
+    html.match(/"VISITOR_DATA":"([^"]+)"/)?.[1] || "";
+
+  return { apiKey, clientVersion, visitorData };
 }
 
-async function fetchCaptions(videoId) {
-  let lastError;
+async function getCaptions(videoId) {
+  const session = await getSession(videoId);
 
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const apiUrl = `${instance}/api/v1/captions/${videoId}`;
-      const res = await fetch(apiUrl, {
-        headers: {
-          Accept: "application/json",
+  const res = await fetch(`${INNERTUBE_URL}?key=${session.apiKey}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
+      "X-YouTube-Client-Name": "1",
+      "X-YouTube-Client-Version": session.clientVersion,
+      ...(session.visitorData ? { "X-Goog-Visitor-Id": session.visitorData } : {}),
+    },
+    body: JSON.stringify({
+      context: {
+        client: {
+          hl: "en",
+          gl: "US",
+          clientName: "WEB",
+          clientVersion: session.clientVersion,
+          visitorData: session.visitorData,
         },
-        signal: AbortSignal.timeout(10000),
-      });
+      },
+      videoId,
+    }),
+  });
 
-      if (!res.ok) continue;
+  if (!res.ok) throw new Error(`InnerTube API returned ${res.status}`);
+  const data = await res.json();
 
-      const data = await res.json();
-      const captions = data?.captions;
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks?.length) throw new Error("No captions available");
 
-      if (!captions || captions.length === 0) continue;
+  const track = tracks.find((t) => t.languageCode === "en") || tracks[0];
+  const subRes = await fetch(track.baseUrl, {
+    headers: { "User-Agent": USER_AGENT },
+  });
 
-      const enCaption =
-        captions.find((c) => c.language_code === "en") || captions[0];
+  const xml = await subRes.text();
+  const snippets = [];
+  const regex = /<text start="([^"]*)" dur="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
+  let match;
 
-      const subRes = await fetch(
-        `${instance}${enCaption.url}`,
-        { signal: AbortSignal.timeout(10000) }
-      );
-
-      if (!subRes.ok) continue;
-
-      const subData = await subRes.json();
-      const segments = subData?.captions || subData || [];
-
-      if (Array.isArray(segments) && segments.length > 0) {
-        return segments.map((s) => decodeHtmlEntities(s.text || s.content || ""));
-      }
-    } catch (err) {
-      lastError = err;
-      continue;
-    }
+  while ((match = regex.exec(xml)) !== null) {
+    const text = match[3]
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n/g, " ")
+      .trim();
+    if (text) snippets.push(text);
   }
 
-  throw lastError || new Error("All Invidious instances failed");
+  return snippets.join(" ");
 }
 
 export default async function handler(req, res) {
@@ -82,36 +94,20 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   const { url } = req.query;
-
-  if (!url) {
-    return res.status(400).json({ error: "Missing 'url' query parameter" });
-  }
+  if (!url) return res.status(400).json({ error: "Missing url parameter" });
 
   const videoId = extractVideoId(url);
-
-  if (!videoId) {
-    return res.status(400).json({ error: "Invalid YouTube URL or video ID" });
-  }
+  if (!videoId) return res.status(400).json({ error: "Invalid YouTube URL" });
 
   try {
-    const textSegments = await fetchCaptions(videoId);
-    const transcript = textSegments.join(" ");
-
+    const transcript = await getCaptions(videoId);
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${videoId}-transcript.txt"`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="${videoId}-transcript.txt"`);
     return res.status(200).send(transcript);
   } catch (error) {
-    return res.status(500).json({
-      error: "Failed to fetch transcript",
-      message: error.message,
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
