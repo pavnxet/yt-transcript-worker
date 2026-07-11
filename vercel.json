@@ -2,8 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/transcript.js",
-      "use": "@vercel/node"
+      "src": "api/transcript.py",
+      "use": "@vercel/python"
     },
     {
       "src": "index.html",
@@ -13,7 +13,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/transcript.js"
+      "dest": "/api/transcript.py"
     },
     {
       "src": "/(.*)",
