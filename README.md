@@ -173,7 +173,7 @@ That's it. Open a YouTube video and click the extension icon 🎬
 
 | Variable | Type | Required | Description |
 |---|---|---|---|
-| `TRANSCRIPT_API_KEY� | Env var | Optional | Fallback key, used when the KV vault is empty |
+| `TRANSCRIPT_API_KEY` | Env var | Optional | Fallback key, used when the KV vault is empty |
 | `ADMIN_PASSWORD` | 🔐 Secret | **Yes** | Password that unlocks `/admin` |
 | `CONFIG_KV` | KV binding | **Yes** | Stores your API keys and the active index |
 
@@ -462,6 +462,6 @@ MIT — do what you like with it.
 
 <div align="center">
 
-**⭐ If this saved you time, a star is appreciated!**
+**⭐ If this saved you time, a star appreciated!**
 
 </div>
