@@ -462,6 +462,6 @@ MIT — do what you like with it.
 
 <div align="center">
 
-**⭐ If this saved you time, a star appreciated!**
+**⭐ If this saved you time, a star is appreciated!**
 
 </div>
