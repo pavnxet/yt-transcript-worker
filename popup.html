@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YT Transcript Downloader</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>YT Transcript</h1>
+    </div>
+    <button id="openOptions" class="icon-btn" title="Settings">⚙️</button>
+  </header>
+
+  <div id="setup" class="banner hidden">
+    <p><strong>Almost there.</strong> Add your Cloudflare Worker URL to start fetching transcripts.</p>
+    <button id="setupBtn" class="primary small">Open settings</button>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="single">Single</button>
+    <button class="tab" data-tab="batch">Batch</button>
+    <button class="tab" data-tab="history">History</button>
+  </nav>
+
+  <main>
+    <!-- ================= SINGLE ================= -->
+    <section class="panel-view" data-view="single">
+      <label class="field">
+        <span class="label">YouTube link or video ID</span>
+        <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" spellcheck="false" />
+      </label>
+
+      <div class="row">
+        <button id="fetchBtn" class="primary">Get transcript</button>
+        <button id="pasteBtn" class="ghost" title="Use current tab">Current tab</button>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div id="result" class="result hidden">
+        <div class="meta">
+          <span id="metaSlot" class="chip">Slot: —</span>
+          <span id="metaCredits" class="chip">Credits: —</span>
+          <span id="metaLen" class="chip">— chars</span>
+        </div>
+
+        <div class="search-row">
+          <input id="searchInput" type="text" placeholder="Search transcript…" autocomplete="off" />
+          <button id="searchPrev" class="ghost tiny" title="Previous match">◀</button>
+          <button id="searchNext" class="ghost tiny" title="Next match">▶</button>
+          <span id="searchCount" class="count">0/0</span>
+        </div>
+
+        <textarea id="output" readonly spellcheck="false"></textarea>
+
+        <div class="row">
+          <label class="inline-field">
+            <span class="label">Format</span>
+            <select id="formatSelect">
+              <option value="txt">Plain .txt</option>
+              <option value="srt">Subtitles .srt</option>
+              <option value="md">Markdown .md</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <button id="copyBtn" class="ghost">Copy</button>
+          <button id="copyPromptBtn" class="ghost">Copy + AI prompt</button>
+          <button id="downloadBtn" class="ghost">Download</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= BATCH ================= -->
+    <section class="panel-view hidden" data-view="batch">
+      <label class="field">
+        <span class="label">Links — one per line (videos, or a playlist / channel URL)</span>
+        <textarea id="batchInput" class="short" placeholder="https://www.youtube.com/watch?v=…&#10;https://youtu.be/…&#10;https://www.youtube.com/playlist?list=…" spellcheck="false"></textarea>
+      </label>
+
+      <label class="check">
+        <input id="expandCollections" type="checkbox" checked />
+        <span>Expand playlists / channels into individual videos</span>
+      </label>
+
+      <div class="row">
+        <button id="batchBtn" class="primary">Fetch all</button>
+        <button id="batchStop" class="ghost" disabled>Stop</button>
+      </div>
+      <p class="hint">Keep this popup open while a batch runs — closing it stops the job. Each video spends one API credit.</p>
+
+      <div id="batchStatus" class="status"></div>
+      <div class="progress"><div id="batchBar" class="progress-fill"></div></div>
+
+      <div id="batchResults" class="list hidden"></div>
+
+      <div id="batchActions" class="row hidden">
+        <button id="batchCopyAll" class="ghost">Copy all</button>
+        <button id="batchTxt" class="ghost">Download .txt</button>
+        <button id="batchZip" class="ghost">Download .zip</button>
+      </div>
+    </section>
+
+    <!-- ================= HISTORY ================= -->
+    <section class="panel-view hidden" data-view="history">
+      <div class="row space">
+        <span class="label" style="margin:0">Recent transcripts (stored locally)</span>
+        <button id="clearHistory" class="ghost tiny">Clear all</button>
+      </div>
+      <div id="historyList" class="list"></div>
+    </section>
+  </main>
+
+  <footer class="quick">
+    <label class="switch" title="Show the floating Transcript button on YouTube video pages">
+      <input id="qShowFab" type="checkbox" />
+      <span>Floating button</span>
+    </label>
+    <label class="switch" title="Download the file automatically after fetching">
+      <input id="qAutoDownload" type="checkbox" />
+      <span>Auto-download</span>
+    </label>
+  </footer>
+
+  <script src="zip.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
