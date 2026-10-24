@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YT Transcript Downloader — Settings</title>
+  <style>
+    :root {
+      --paper: #faf9f5; --paper-2: #f0eee6; --card: #ffffff;
+      --ink: #1f1e1d; --ink-2: #3d3b36; --muted: #83807a; --faint: #a8a49b;
+      --line: #e8e5dc; --line-2: #dedbd1;
+      --coral: #d97757; --coral-dark: #c96442; --coral-soft: #faf0ea;
+      --ok: #4f7a5b; --warn: #b8863b; --err: #b4544a;
+      --radius: 12px; --radius-sm: 9px;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 660px; margin: 0 auto; padding: 40px 24px 72px; }
+    h1 {
+      font-family: var(--serif); font-size: 27px; font-weight: 600;
+      margin: 0 0 6px; letter-spacing: .1px;
+    }
+    .sub { color: var(--muted); margin: 0 0 30px; font-size: 13.5px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 22px 24px; margin-bottom: 18px;
+    }
+    h2 {
+      font-family: var(--serif); font-size: 16px; font-weight: 600;
+      margin: 0 0 6px; color: var(--ink);
+    }
+    .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 16px; line-height: 1.6; }
+    label { display: block; font: 600 10.5px/1 var(--sans); text-transform: uppercase;
+      letter-spacing: .7px; color: var(--muted); margin-bottom: 7px; }
+    input[type="text"], select {
+      width: 100%; background: var(--card); color: var(--ink);
+      border: 1px solid var(--line-2); border-radius: var(--radius-sm);
+      padding: 11px 13px; font: inherit; outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--coral); box-shadow: 0 0 0 3px var(--coral-soft);
+    }
+    input[type="text"]::placeholder { color: var(--faint); }
+    .row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+    button {
+      border: 1px solid var(--line-2); border-radius: var(--radius-sm);
+      padding: 11px 18px; font: 600 13px/1 var(--sans); cursor: pointer;
+      background: var(--card); color: var(--ink);
+      transition: background .15s ease, border-color .15s ease, transform .08s ease;
+    }
+    button:hover { background: var(--paper-2); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .45; cursor: default; transform: none; }
+    .primary { background: var(--coral); color: #fff; border-color: transparent; }
+    .primary:hover { background: var(--coral-dark); }
+    .status { margin-top: 16px; font-size: 13px; min-height: 20px; color: var(--muted); }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.busy { color: var(--warn); }
+    .perm { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+    .badge { border-radius: 999px; padding: 3px 11px; font-size: 11px; border: 1px solid var(--line-2); }
+    .badge.on { color: var(--ok); border-color: #cfe0d4; background: #f2f7f3; }
+    .badge.off { color: var(--warn); border-color: #ecdfc4; background: #fbf6ec; }
+
+    /* preference switches */
+    .pref {
+      display: flex; align-items: flex-start; gap: 13px;
+      padding: 14px 0; border-top: 1px solid var(--line);
+    }
+    .pref:first-of-type { border-top: none; padding-top: 2px; }
+    .pref .text { flex: 1; }
+    .pref .text b { display: block; font: 600 13.5px/1.4 var(--sans); color: var(--ink); }
+    .pref .text span { font-size: 12.5px; color: var(--muted); }
+    .switch { flex: none; margin: 2px 0 0; }
+    .switch input {
+      appearance: none; -webkit-appearance: none; position: relative;
+      width: 38px; height: 22px; margin: 0; border-radius: 999px;
+      background: #d9d5cb; cursor: pointer; transition: background .18s ease;
+    }
+    .switch input::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .18s ease;
+    }
+    .switch input:checked { background: var(--coral); }
+    .switch input:checked::after { transform: translateX(16px); }
+
+    ol { margin: 10px 0 0; padding-left: 22px; color: var(--ink-2); font-size: 13.5px; }
+    ol li { margin-bottom: 6px; }
+    code {
+      background: var(--paper-2); border: 1px solid var(--line);
+      border-radius: 6px; padding: 1.5px 6px; font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    a { color: var(--coral-dark); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>YT Transcript Downloader</h1>
+    <p class="sub">Point the extension at your own <code>yt-transcript-worker</code> Cloudflare Worker.</p>
+
+    <div class="card">
+      <h2>1. Worker URL</h2>
+      <p class="hint">The base URL of your deployed worker, without <code>/process</code>. Example: <code>https://your-worker.workers.dev</code></p>
+      <label for="workerUrl">Cloudflare Worker URL</label>
+      <input id="workerUrl" type="text" placeholder="https://your-worker.workers.dev" autocomplete="off" spellcheck="false" />
+      <div class="row">
+        <button id="saveBtn" class="primary">Save &amp; grant access</button>
+        <button id="testBtn">Test connection</button>
+      </div>
+      <div id="perm" class="perm">
+        Host access: <span id="permBadge" class="badge off">checking…</span>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>2. Preferences</h2>
+      <p class="hint">These apply to the popup and the in-page panel, and take effect immediately.</p>
+
+      <div class="pref">
+        <div class="text">
+          <b>Show the floating button</b>
+          <span>Display the Transcript button on YouTube video pages. Turn it off to keep the page clean — the popup and the keyboard shortcut still work.</span>
+        </div>
+        <label class="switch"><input id="showFab" type="checkbox" /></label>
+      </div>
+
+      <div class="pref">
+        <div class="text">
+          <b>Auto-download after fetching</b>
+          <span>Save the transcript file automatically as soon as a fetch finishes.</span>
+        </div>
+        <label class="switch"><input id="autoDownload" type="checkbox" /></label>
+      </div>
+
+      <div class="pref">
+        <div class="text">
+          <b>Auto-fetch on video pages</b>
+          <span>Open the panel and fetch the transcript whenever you land on a YouTube video.</span>
+        </div>
+        <label class="switch"><input id="autoRun" type="checkbox" /></label>
+      </div>
+
+      <div class="pref">
+        <div class="text">
+          <b>Default export format</b>
+          <span>Used by Download and by auto-download.</span>
+        </div>
+        <select id="defaultFormat" style="width:auto;min-width:150px">
+          <option value="txt">Plain .txt</option>
+          <option value="srt">Subtitles .srt</option>
+          <option value="md">Markdown .md</option>
+        </select>
+      </div>
+
+      <div id="prefStatus" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. How it works</h2>
+      <ol>
+        <li>The extension reads the video id from the YouTube link you give it.</li>
+        <li>It POSTs <code>youtube_url</code> to <code>&lt;your-worker&gt;/process</code> as multipart form-data.</li>
+        <li>The worker rotates its API keys and returns a timestamped transcript.</li>
+        <li>You copy it, copy it with the AI note prompt, or download it as <code>.txt</code>, <code>.srt</code> or <code>.md</code>.</li>
+      </ol>
+      <p class="hint" style="margin-top:12px">
+        Tip: on a YouTube page, press <code>Alt</code>+<code>Shift</code>+<code>T</code> to open the
+        in-page transcript panel. Rebind it at <code>chrome://extensions/shortcuts</code>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>4. Privacy</h2>
+      <p class="hint" style="margin:0">
+        Your worker URL and transcript requests go only to the worker you configure —
+        nothing is sent anywhere else. Access is granted to that one origin only, and
+        the extension asks for no permission to read your browsing history.
+      </p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
