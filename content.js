@@ -379,18 +379,88 @@
     await load(id);
   }
 
+  /** The AI note prompt lives in the service worker; fetch it once and cache. */
+  let cachedPrompt = null;
+  async function getAiPrompt() {
+    if (cachedPrompt !== null) return cachedPrompt;
+    try {
+      const r = await chrome.runtime.sendMessage({ type: "GET_AI_PROMPT" });
+      cachedPrompt = (r && r.prompt) || "";
+    } catch {
+      cachedPrompt = "";
+    }
+    return cachedPrompt;
+  }
+
+  /**
+   * Show a transcript we already have, whichever source produced it.
+   * `meta.sourceLabel` / `meta.creditLabel` drive the two chips.
+   */
+  async function finishLoad(videoId, transcript, meta, statusText, aiPrompt) {
+    state.loadedFor = videoId;
+    state.raw = transcript;
+    state.aiPrompt = aiPrompt || (await getAiPrompt());
+    state.meta = meta;
+
+    ui.slot.textContent = meta.sourceLabel;
+    ui.credits.textContent = meta.creditLabel;
+
+    await applyFormat();
+    [ui.copy, ui.prompt, ui.dl].forEach((b) => (b.disabled = false));
+
+    const lines = transcript.split("\n").length;
+    let msg = `${statusText} — ${lines} lines.`;
+    if (settings.autoDownload) {
+      const ext = download();
+      if (ext) msg += ` Saved .${ext} file.`;
+    }
+    setStatus(msg, "ok");
+  }
+
   async function load(videoId) {
     state.loadedFor = null;
     state.raw = "";
     state.view = "";
     ui.textarea.value = "";
-    ui.slot.textContent = "Slot: —";
+    ui.slot.textContent = "Source: —";
     ui.credits.textContent = "Credits: —";
     ui.len.textContent = "— chars";
     [ui.copy, ui.prompt, ui.dl].forEach((b) => (b.disabled = true));
     resetSearch();
-    setStatus("Fetching transcript…", "busy");
 
+    // 1. PRIMARY: read the transcript YouTube already rendered on the page.
+    //    No API credits, no network round trip.
+    if (window.YTTX_DOM && typeof window.YTTX_DOM.getTranscript === "function") {
+      setStatus("Reading the page's transcript…", "busy");
+      let dom = null;
+      try {
+        dom = await window.YTTX_DOM.getTranscript({
+          onProgress: (m) => setStatus(m, "busy"),
+          timeoutMs: 15000,
+        });
+      } catch {
+        dom = null;
+      }
+      if (dom && dom.text && dom.text.trim()) {
+        await finishLoad(
+          videoId,
+          dom.text,
+          {
+            videoId,
+            url: location.href,
+            sourceLabel: "Source: page panel",
+            creditLabel: "0 credits used",
+          },
+          "Done from the page (0 credits)"
+        );
+        return;
+      }
+      setStatus("Panel unavailable — asking your worker…", "busy");
+    } else {
+      setStatus("Fetching transcript…", "busy");
+    }
+
+    // 2. FALLBACK: the Cloudflare Worker.
     let resp;
     try {
       resp = await chrome.runtime.sendMessage({
@@ -418,24 +488,17 @@
       return;
     }
 
-    state.loadedFor = videoId;
-    state.raw = resp.transcript;
-    state.aiPrompt = resp.aiPrompt || "";
-    state.meta = resp.meta;
-
-    ui.slot.textContent = "Slot: " + resp.meta.keySlot;
-    ui.credits.textContent = "Credits: " + resp.meta.credits;
-
-    await applyFormat();
-    [ui.copy, ui.prompt, ui.dl].forEach((b) => (b.disabled = false));
-
-    const lines = resp.transcript.split("\n").length;
-    let msg = `Done — ${lines} lines via slot #${resp.meta.keySlot}.`;
-    if (settings.autoDownload) {
-      const ext = download();
-      if (ext) msg += ` Saved .${ext} file.`;
-    }
-    setStatus(msg, "ok");
+    await finishLoad(
+      videoId,
+      resp.transcript,
+      {
+        ...resp.meta,
+        sourceLabel: "Slot: " + resp.meta.keySlot,
+        creditLabel: "Credits: " + resp.meta.credits,
+      },
+      `Done via slot #${resp.meta.keySlot}`,
+      resp.aiPrompt || ""
+    );
   }
 
   async function copy(text, okMsg) {
