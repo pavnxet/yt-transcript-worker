@@ -272,6 +272,8 @@ needed.
 - 🗜️ **ZIP export** — bundle a whole batch, one file per video
 - 📊 **Status badge** — ✓ / ! on the toolbar icon
 - 🎨 **Claude-inspired theme** — warm cream, coral accent, serif headings
+- ⚡ **Page-first** — reads YouTube's own transcript panel (**0 API credits**), worker only as fallback
+- 📱 **Mobile-ready** — works on `m.youtube.com` in Chromium-based mobile browsers that support extensions
 
 ### 🎯 How to use it
 
@@ -292,6 +294,26 @@ needed.
 
 Open any YouTube video and click the red **Transcript** button in the
 bottom-right corner. Click any `[00:00:00]` line to seek the video there.
+
+### ⚡ Where the transcript comes from
+
+The extension tries two sources, in this order:
+
+1. **The page (primary).** YouTube already renders the transcript in the DOM
+   once the panel is open, so `dom-extract.js` just reads it. No API call, no
+   credits, instant. It handles the legacy renderer, the modern tabbed
+   "In this video" panel, mobile markup, and unknown layouts (it can infer the
+   container from repeated timecodes). It also ignores YouTube's hidden dummy
+   panel and refuses to mistake a chapter list for a transcript.
+2. **Your worker (fallback).** If the page has no captions, the panel won't
+   open, or the markup is unrecognisable, it asks your Cloudflare Worker
+   exactly as before.
+
+The two chips in the panel tell you which one answered: *Source: page panel ·
+0 credits used* or *Slot: 2 · Credits: 41*.
+
+Timestamps are normalised to `[HH:MM:SS]` either way, so search, `.srt` and
+`.md` export behave identically regardless of source.
 
 ### ⚙️ Settings
 
@@ -339,6 +361,7 @@ yt-transcript-worker/
 │   ├── manifest.json           Permissions, command, action, content script
 │   ├── background.js           Service worker — settings, fetch, exporters,
 │   │                           history, batch engine, commands, badge
+│   ├── dom-extract.js          Reads YouTube's own transcript panel (primary source)
 │   ├── content.js              Floating button + shadow-DOM panel on YouTube
 │   ├── popup.html/.css/.js     Toolbar UI — Single / Batch / History
 │   ├── options.html/.js        Worker URL, permission grant, preferences
@@ -408,6 +431,8 @@ There's no build step — it's plain HTML/CSS/JS.
 | `.srt` / `.md` falls back to plain text | The transcript had no timestamps |
 | Batch stops partway | The popup must stay open — closing it cancels the job |
 | Credits show as `N/A` | Your worker build doesn't emit those headers (fallback-key path) |
+| Chips say *Source: page panel* | Working as intended — no credits were spent |
+| Falls back to the worker every time | The video has no captions, or the transcript panel never opened |
 
 ---
 
