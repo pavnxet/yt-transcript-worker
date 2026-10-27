@@ -480,18 +480,23 @@ chrome.runtime.onConnect.addListener((port) => {
 
 // --- keyboard command -----------------------------------------------------
 
-chrome.commands.onCommand.addListener(async (command) => {
-  if (command !== "fetch-current") return;
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || tab.id === undefined) return;
-  try {
-    // The content script only exists on YouTube pages, so a failure here
-    // simply means "not on YouTube".
-    await chrome.tabs.sendMessage(tab.id, { type: "OPEN_TRANSCRIPT_PANEL" });
-  } catch {
-    flashBadge("!", "#ff6b6b", 3000);
-  }
-});
+// Some mobile Chromium builds (Kiwi, Yandex, Firefox for Android) don't expose
+// chrome.commands at all. Touching it unguarded would throw during worker
+// startup and take the whole extension down, so feature-detect first.
+if (chrome.commands && chrome.commands.onCommand) {
+  chrome.commands.onCommand.addListener(async (command) => {
+    if (command !== "fetch-current") return;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || tab.id === undefined) return;
+    try {
+      // The content script only exists on YouTube pages, so a failure here
+      // simply means "not on YouTube".
+      await chrome.tabs.sendMessage(tab.id, { type: "OPEN_TRANSCRIPT_PANEL" });
+    } catch {
+      flashBadge("!", "#ff6b6b", 3000);
+    }
+  });
+}
 
 // --- message router -------------------------------------------------------
 
@@ -525,6 +530,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "GET_SETTINGS") {
     getSettings().then(sendResponse);
+    return true;
+  }
+
+  // The content script needs the note prompt even when the transcript came
+  // from the page DOM rather than the worker.
+  if (msg.type === "GET_AI_PROMPT") {
+    sendResponse({ prompt: NOTE_PROMPT });
     return true;
   }
 
